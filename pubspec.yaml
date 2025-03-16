@@ -1,0 +1,27 @@
+name: manage_buddy
+description: "A team management application"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  shared_preferences: ^2.2.2
+  timezone: ^0.9.2
+  intl: ^0.19.0
+  uuid: ^4.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.15
+  build_web_compilers: ^4.0.9
+  build_daemon: ^4.0.4
+
+flutter:
+  uses-material-design: true
