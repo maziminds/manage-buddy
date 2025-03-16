@@ -27,9 +27,9 @@ This is a Flutter project for a team management app. almost entirely written by 
 ## Screenshots
 
 <div style="display: grid; grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 10px;">
-  <img src="ScreenShots/1.jpg" alt="Laravel Gigapay cover" style="width: 80%; height: auto;">
-  <img src="ScreenShots/2.jpg" alt="Laravel Gigapay cover" style="width: 80%; height: auto;">
-  <img src="ScreenShots/3.jpg" alt="Laravel Gigapay cover" style="width: 80%; height: auto;">
-  <img src="ScreenShots/4.jpg" alt="Laravel Gigapay cover" style="width: 80%; height: auto;">
+  <img src="ScreenShots/1.jpg" alt="Laravel Gigapay cover" style="width: 40%; height: auto;">
+  <img src="ScreenShots/2.jpg" alt="Laravel Gigapay cover" style="width: 40%; height: auto;">
+  <img src="ScreenShots/3.jpg" alt="Laravel Gigapay cover" style="width: 40%; height: auto;">
+  <img src="ScreenShots/4.jpg" alt="Laravel Gigapay cover" style="width: 40%; height: auto;">
 </div>
 
