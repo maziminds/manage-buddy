@@ -1,9 +1,9 @@
 class TeamMember {
   final String id;
   final String name;
-  final String email;
-  final String role;
-  final String timezone;
+  final String? email;
+  final String? role;
+  final String? timezone;
   final String activeHoursStart;
   final String activeHoursEnd;
   final Map<String, String> customFields;
@@ -11,9 +11,9 @@ class TeamMember {
   TeamMember({
     required this.id,
     required this.name,
-    required this.email,
-    required this.role,
-    required this.timezone,
+    this.email,
+    this.role,
+    this.timezone,
     required this.activeHoursStart,
     required this.activeHoursEnd,
     Map<String, String>? customFields,
@@ -33,9 +33,9 @@ class TeamMember {
   factory TeamMember.fromJson(Map<String, dynamic> json) => TeamMember(
         id: json['id'] as String,
         name: json['name'] as String,
-        email: json['email'] as String,
-        role: json['role'] as String,
-        timezone: json['timezone'] as String,
+        email: json['email'] as String?,
+        role: json['role'] as String?,
+        timezone: json['timezone'] as String?,
         activeHoursStart: json['activeHoursStart'] as String,
         activeHoursEnd: json['activeHoursEnd'] as String,
         customFields: (json['customFields'] as Map<String, dynamic>?)?.map(

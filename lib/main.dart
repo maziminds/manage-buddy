@@ -90,7 +90,7 @@ class _TeamListPageState extends State<TeamListPage> {
   }
 
   bool _isMemberActive(TeamMember member) {
-    final memberTz = tz.getLocation(member.timezone);
+    final memberTz = member.timezone != null ? tz.getLocation(member.timezone!) : tz.getLocation('UTC');
     final now = tz.TZDateTime.now(memberTz);
     final currentTime = TimeOfDay(hour: now.hour, minute: now.minute);
 
@@ -344,33 +344,25 @@ class _TeamListPageState extends State<TeamListPage> {
               itemCount: filteredMembers.length,
               itemBuilder: (context, index) {
                 final member = filteredMembers[index];
-                final roleInfo = roleInfos[member.role]!;
-                final isActive = _isMemberActive(member);
-                final memberTz = tz.getLocation(member.timezone);
+                final roleInfo = roleInfos[member.role] ?? RoleInfo('Unknown Role', Colors.grey);
+                final memberTz = member.timezone != null ? tz.getLocation(member.timezone!) : tz.getLocation('UTC');
                 final localTime = tz.TZDateTime.now(memberTz);
 
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: _getStatusColor(isActive),
-                  child: ExpansionTile(
+                  color: _getStatusColor(_isMemberActive(member)),
+                  child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: isActive ? roleInfo.color : Colors.grey,
+                      backgroundColor: _isMemberActive(member) ? roleInfo.color : Colors.grey,
                       child: Text(
-                        _getInitials(member.name),
+                        _getInitials(member.name ?? ''),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    title: Text(
-                      member.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.black,
-                      ),
-                    ),
+                    title: Text(member.name ?? 'Unnamed'),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -385,7 +377,7 @@ class _TeamListPageState extends State<TeamListPage> {
                                 shape: BoxShape.circle,
                               ),
                             ),
-                            Text(roleInfo.name, style: const TextStyle(color: Colors.black)),
+                            Text(roleInfo.name),
                           ],
                         ),
                         const SizedBox(height: 4),
@@ -394,13 +386,13 @@ class _TeamListPageState extends State<TeamListPage> {
                             Icon(
                               Icons.circle,
                               size: 12,
-                              color: isActive ? Colors.green : Colors.grey,
+                              color: _isMemberActive(member) ? Colors.green : Colors.grey,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              isActive ? 'Active' : 'Inactive',
+                              _isMemberActive(member) ? 'Active' : 'Inactive',
                               style: TextStyle(
-                                color: isActive ? Colors.green : Colors.grey,
+                                color: _isMemberActive(member) ? Colors.green : Colors.grey,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -434,70 +426,11 @@ class _TeamListPageState extends State<TeamListPage> {
                         ),
                       ],
                     ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Email: ${member.email}'),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Timezone: ${member.timezone} (${_formatTimezoneOffset(member.timezone)})',
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Active Hours: ${member.activeHoursStart} - ${member.activeHoursEnd}',
-                            ),
-                            if (member.customFields.isNotEmpty) ...[
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Custom Fields:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              ...member.customFields.entries.map((entry) => Padding(
-                                padding: const EdgeInsets.only(bottom: 4.0),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${entry.key}:',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Row(
-                                        children: [
-                                          Text(entry.value),
-                                          IconButton(
-                                            icon: const Icon(Icons.copy),
-                                            onPressed: () {
-                                              Clipboard.setData(ClipboardData(text: entry.value));
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('Copied to clipboard!'),
-                                                  duration: Duration(seconds: 1),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
+                    onTap: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => MemberDetailPage(member: member),
+                      ));
+                    },
                   ),
                 );
               },
@@ -532,6 +465,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 17, minute: 0);
   final Map<TextEditingController, TextEditingController> _customFieldControllers = {};
+  bool _isNotReadyYet = false;
 
   final List<String> _roles = roleInfos.keys.toList();
 
@@ -621,7 +555,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (!_isNotReadyYet && (value == null || value.isEmpty)) {
                   return 'Please enter a name';
                 }
                 return null;
@@ -635,10 +569,10 @@ class _AddMemberPageState extends State<AddMemberPage> {
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (!_isNotReadyYet && (value == null || value.isEmpty)) {
                   return 'Please enter an email';
                 }
-                if (!value.contains('@')) {
+                if (!_isNotReadyYet && value != null && !value.contains('@')) {
                   return 'Please enter a valid email';
                 }
                 return null;
@@ -677,7 +611,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                 });
               },
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (!_isNotReadyYet && (value == null || value.isEmpty)) {
                   return 'Please select a role';
                 }
                 return null;
@@ -784,38 +718,36 @@ class _AddMemberPageState extends State<AddMemberPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            CheckboxListTile(
+              title: const Text('Not Ready Yet'),
+              value: _isNotReadyYet,
+              onChanged: (bool? value) {
+                setState(() {
+                  _isNotReadyYet = value ?? false;
+                });
+              },
+            ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () async {
-                if (_formKey.currentState!.validate() && _selectedTimezone != null) {
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
                   final newMember = TeamMember(
                     id: const Uuid().v4(),
                     name: _nameController.text,
-                    email: _emailController.text,
-                    role: _selectedRole!,
-                    timezone: _selectedTimezone!,
+                    email: _isNotReadyYet ? null : _emailController.text,
+                    role: _isNotReadyYet ? null : _selectedRole,
+                    timezone: _isNotReadyYet ? null : _selectedTimezone,
                     activeHoursStart: _formatTimeOfDay(_startTime),
                     activeHoursEnd: _formatTimeOfDay(_endTime),
                     customFields: _getCustomFields(),
                   );
-
-                  await StorageService.instance.saveTeamMember(newMember);
-                  if (mounted) {
-                    Navigator.pop(context);
-                  }
-                } else if (_selectedTimezone == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please select a timezone'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  
+                  StorageService.instance.saveTeamMember(newMember);
+                  Navigator.pop(context);
                 }
               },
-              child: const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text('Add Member'),
-              ),
+              child: const Text('Save Member'),
             ),
           ],
         ),
@@ -845,6 +777,7 @@ class _EditMemberPageState extends State<EditMemberPage> {
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
   final Map<TextEditingController, TextEditingController> _customFieldControllers = {};
+  bool _isNotReadyYet = false;
 
   final List<String> _roles = roleInfos.keys.toList();
 
@@ -855,7 +788,7 @@ class _EditMemberPageState extends State<EditMemberPage> {
     _nameController = TextEditingController(text: widget.member.name);
     _emailController = TextEditingController(text: widget.member.email);
     _selectedRole = widget.member.role;
-    _selectedTimezone = widget.member.timezone;
+    _selectedTimezone = widget.member.timezone ?? 'UTC';
     
     // Parse existing active hours
     final format = DateFormat('HH:mm');
@@ -957,7 +890,7 @@ class _EditMemberPageState extends State<EditMemberPage> {
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (!_isNotReadyYet && (value == null || value.isEmpty)) {
                   return 'Please enter a name';
                 }
                 return null;
@@ -971,10 +904,10 @@ class _EditMemberPageState extends State<EditMemberPage> {
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (!_isNotReadyYet && (value == null || value.isEmpty)) {
                   return 'Please enter an email';
                 }
-                if (!value.contains('@')) {
+                if (value != null && !value.contains('@')) {
                   return 'Please enter a valid email';
                 }
                 return null;
@@ -1013,7 +946,7 @@ class _EditMemberPageState extends State<EditMemberPage> {
                 });
               },
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (!_isNotReadyYet && (value == null || value.isEmpty)) {
                   return 'Please select a role';
                 }
                 return null;
@@ -1120,16 +1053,26 @@ class _EditMemberPageState extends State<EditMemberPage> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            CheckboxListTile(
+              title: const Text('Not Ready Yet'),
+              value: _isNotReadyYet,
+              onChanged: (bool? value) {
+                setState(() {
+                  _isNotReadyYet = value ?? false;
+                });
+              },
+            ),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () async {
-                if (_formKey.currentState!.validate() && _selectedTimezone != null) {
+                if (_formKey.currentState!.validate()) {
                   final updatedMember = TeamMember(
                     id: widget.member.id,
                     name: _nameController.text,
-                    email: _emailController.text,
-                    role: _selectedRole!,
-                    timezone: _selectedTimezone!,
+                    email: _isNotReadyYet ? '' : _emailController.text, // Email is optional if not ready
+                    role: _isNotReadyYet ? '' : _selectedRole ?? '', // Role is optional if not ready
+                    timezone: _isNotReadyYet ? '' : _selectedTimezone ?? '', // Timezone is optional if not ready
                     activeHoursStart: _formatTimeOfDay(_startTime),
                     activeHoursEnd: _formatTimeOfDay(_endTime),
                     customFields: _getCustomFields(),
@@ -1139,13 +1082,6 @@ class _EditMemberPageState extends State<EditMemberPage> {
                   if (mounted) {
                     Navigator.pop(context);
                   }
-                } else if (_selectedTimezone == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please select a timezone'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
                 }
               },
               child: const Padding(
@@ -1279,5 +1215,100 @@ class _TimezonePickerDialogState extends State<TimezonePickerDialog> {
         ),
       ),
     );
+  }
+}
+
+class MemberDetailPage extends StatelessWidget {
+  final TeamMember member;
+
+  const MemberDetailPage({
+    super.key,
+    required this.member,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(member.name ?? 'Unnamed'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Name: ${member.name ?? 'Unnamed'}'),
+            const SizedBox(height: 8),
+            Text('Email: ${member.email ?? 'Not provided'}'),
+            const SizedBox(height: 8),
+            Text('Role: ${member.role ?? 'Not specified'}'),
+            const SizedBox(height: 8),
+            Text(
+              'Timezone: ${member.timezone ?? 'Not specified'} (${_formatTimezoneOffset(member.timezone ?? 'UTC')})',
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Active Hours: ${member.activeHoursStart} - ${member.activeHoursEnd}',
+            ),
+            if (member.customFields.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'Custom Fields:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...member.customFields.entries.map((entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 4.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${entry.key}:',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Text(entry.value),
+                          IconButton(
+                            icon: const Icon(Icons.copy),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: entry.value));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Copied to clipboard!'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatTimezoneOffset(String timezone) {
+    final location = tz.getLocation(timezone);
+    final offsetInSeconds = location.currentTimeZone.offset ~/ 1000;
+    final absSeconds = offsetInSeconds.abs();
+    final hours = absSeconds ~/ 3600;
+    final minutes = (absSeconds % 3600) ~/ 60;
+    
+    final sign = offsetInSeconds >= 0 ? '+' : '-';
+    return 'GMT$sign${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
 }

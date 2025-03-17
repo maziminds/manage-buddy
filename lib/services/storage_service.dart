@@ -24,8 +24,10 @@ class StorageService {
 
   Future<void> saveTeamMember(TeamMember member) async {
     final members = await getAllMembers();
+    print('Members before adding: $members');
     members.add(member);
     await _saveMembers(members);
+    print('Members after adding: $members');
   }
 
   Future<void> updateMember(TeamMember updatedMember) async {
@@ -45,6 +47,7 @@ class StorageService {
 
   Future<void> _saveMembers(List<TeamMember> members) async {
     final jsonData = members.map((m) => m.toJson()).toList();
+    print('Saving members: $jsonData');
     await _prefs.setString(_storageKey, json.encode(jsonData));
   }
 
