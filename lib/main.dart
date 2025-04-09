@@ -723,7 +723,8 @@ class _AddMemberPageState extends State<AddMemberPage> {
             ),
             const SizedBox(height: 16),
             CheckboxListTile(
-              title: const Text('Not Ready Yet'),
+              title: const Text('Not Ready Yet (Skip Validation)'),
+              subtitle: const Text('Data will still be saved, but validation will be skipped'),
               value: _isNotReadyYet,
               onChanged: (bool? value) {
                 setState(() {
@@ -738,9 +739,9 @@ class _AddMemberPageState extends State<AddMemberPage> {
                   final newMember = TeamMember(
                     id: const Uuid().v4(),
                     name: _nameController.text,
-                    email: _isNotReadyYet ? '' : _emailController.text, // Empty string if not ready
-                    role: _isNotReadyYet ? '' : _selectedRole ?? '', // Empty string if not ready
-                    timezone: _isNotReadyYet ? 'UTC' : _selectedTimezone ?? 'UTC', // Use UTC as default
+                    email: _emailController.text, // Always use the provided email
+                    role: _selectedRole ?? '', // Always use the selected role
+                    timezone: _selectedTimezone ?? 'UTC', // Always use the selected timezone
                     activeHoursStart: _formatTimeOfDay(_startTime),
                     activeHoursEnd: _formatTimeOfDay(_endTime),
                     customFields: _getCustomFields(),
@@ -918,7 +919,7 @@ class _EditMemberPageState extends State<EditMemberPage> {
                 if (!_isNotReadyYet && (value == null || value.isEmpty)) {
                   return 'Please enter an email';
                 }
-                if (value != null && !value.contains('@')) {
+                if (!_isNotReadyYet && value != null && !value.isEmpty && !value.contains('@')) {
                   return 'Please enter a valid email';
                 }
                 return null;
@@ -1066,9 +1067,11 @@ class _EditMemberPageState extends State<EditMemberPage> {
             ),
             const SizedBox(height: 16),
             CheckboxListTile(
-              title: const Text('Not Ready Yet'),
+              title: const Text('Not Ready Yet (Skip Validation)'),
+              subtitle: const Text('Data will still be saved, but validation will be skipped'),
               value: _isNotReadyYet,
               onChanged: (bool? value) {
+                print('Not Ready Yet changed to: $value');
                 setState(() {
                   _isNotReadyYet = value ?? false;
                 });
@@ -1077,22 +1080,44 @@ class _EditMemberPageState extends State<EditMemberPage> {
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () async {
+                print('Update button pressed');
+                print('Form validation: ${_formKey.currentState!.validate()}');
                 if (_formKey.currentState!.validate()) {
+                  print('Form validated successfully');
+                  print('Email controller text: "${_emailController.text}"');
+                  print('Is Not Ready Yet: $_isNotReadyYet');
+
+                  // Always use the values from the form fields, regardless of "Not Ready Yet" state
+                  final String emailValue = _emailController.text;
+                  print('Email value to be used: "$emailValue"');
+
                   final updatedMember = TeamMember(
                     id: widget.member.id,
                     name: _nameController.text,
-                    email: _isNotReadyYet ? '' : _emailController.text, // Email is optional if not ready
-                    role: _isNotReadyYet ? '' : _selectedRole ?? '', // Role is optional if not ready
-                    timezone: _isNotReadyYet ? 'UTC' : _selectedTimezone ?? 'UTC', // Use UTC as default
+                    email: emailValue, // Always use the provided email
+                    role: _selectedRole ?? '', // Always use the selected role
+                    timezone: _selectedTimezone ?? 'UTC', // Always use the selected timezone
                     activeHoursStart: _formatTimeOfDay(_startTime),
                     activeHoursEnd: _formatTimeOfDay(_endTime),
                     customFields: _getCustomFields(),
                   );
 
-                  await StorageService.instance.updateMember(updatedMember);
-                  if (mounted) {
-                    Navigator.pop(context);
+                  print('Updated member email: "${updatedMember.email}"');
+
+                  print('Updated member: $updatedMember');
+                  print('Member ID: ${updatedMember.id}');
+
+                  try {
+                    await StorageService.instance.updateMember(updatedMember);
+                    print('Member updated successfully');
+                    if (mounted) {
+                      Navigator.pop(context);
+                    }
+                  } catch (e) {
+                    print('Error updating member: $e');
                   }
+                } else {
+                  print('Form validation failed');
                 }
               },
               child: const Padding(

@@ -42,4 +42,9 @@ class TeamMember {
           (key, value) => MapEntry(key, value.toString()),
         ) ?? {},
       );
+
+  @override
+  String toString() {
+    return 'TeamMember{id: $id, name: $name, email: $email, role: $role, timezone: $timezone, activeHoursStart: $activeHoursStart, activeHoursEnd: $activeHoursEnd, customFields: $customFields}';
+  }
 }
