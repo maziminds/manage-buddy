@@ -114,6 +114,9 @@ class _TeamListPageState extends State<TeamListPage> {
   }
 
   String _getInitials(String name) {
+    if (name.isEmpty) {
+      return '?'; // Return a placeholder for empty names
+    }
     final parts = name.trim().split(' ');
     if (parts.length > 1) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
@@ -131,7 +134,7 @@ class _TeamListPageState extends State<TeamListPage> {
     final absSeconds = offsetInSeconds.abs();
     final hours = absSeconds ~/ 3600;
     final minutes = (absSeconds % 3600) ~/ 60;
-    
+
     final sign = offsetInSeconds >= 0 ? '+' : '-';
     return 'GMT$sign${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
@@ -167,7 +170,7 @@ class _TeamListPageState extends State<TeamListPage> {
   @override
   Widget build(BuildContext context) {
     final filteredMembers = _filteredMembers;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Manage Buddy'),
@@ -516,7 +519,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
     final absSeconds = offsetInSeconds.abs();
     final hours = absSeconds ~/ 3600;
     final minutes = (absSeconds % 3600) ~/ 60;
-    
+
     final sign = offsetInSeconds >= 0 ? '+' : '-';
     return 'GMT$sign${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
@@ -632,7 +635,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                   });
                 }
               },
-              child: Text(_selectedTimezone != null 
+              child: Text(_selectedTimezone != null
                 ? '${_selectedTimezone!} (${_formatTimezoneOffset(_selectedTimezone!)})'
                 : 'Select Timezone'),
             ),
@@ -735,14 +738,14 @@ class _AddMemberPageState extends State<AddMemberPage> {
                   final newMember = TeamMember(
                     id: const Uuid().v4(),
                     name: _nameController.text,
-                    email: _isNotReadyYet ? null : _emailController.text,
-                    role: _isNotReadyYet ? null : _selectedRole,
-                    timezone: _isNotReadyYet ? null : _selectedTimezone,
+                    email: _isNotReadyYet ? '' : _emailController.text, // Empty string if not ready
+                    role: _isNotReadyYet ? '' : _selectedRole ?? '', // Empty string if not ready
+                    timezone: _isNotReadyYet ? 'UTC' : _selectedTimezone ?? 'UTC', // Use UTC as default
                     activeHoursStart: _formatTimeOfDay(_startTime),
                     activeHoursEnd: _formatTimeOfDay(_endTime),
                     customFields: _getCustomFields(),
                   );
-                  
+
                   StorageService.instance.saveTeamMember(newMember);
                   Navigator.pop(context);
                 }
@@ -758,7 +761,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
 
 class EditMemberPage extends StatefulWidget {
   final TeamMember member;
-  
+
   const EditMemberPage({
     super.key,
     required this.member,
@@ -787,9 +790,17 @@ class _EditMemberPageState extends State<EditMemberPage> {
     // Initialize controllers with existing member data
     _nameController = TextEditingController(text: widget.member.name);
     _emailController = TextEditingController(text: widget.member.email);
-    _selectedRole = widget.member.role;
+
+    // Check if role is empty or not in the available roles
+    if (widget.member.role == null || widget.member.role!.isEmpty || !_roles.contains(widget.member.role)) {
+      _selectedRole = null; // Set to null if role is empty or invalid
+      _isNotReadyYet = true; // Set Not Ready Yet to true
+    } else {
+      _selectedRole = widget.member.role;
+    }
+
     _selectedTimezone = widget.member.timezone ?? 'UTC';
-    
+
     // Parse existing active hours
     final format = DateFormat('HH:mm');
     final startTime = format.parse(widget.member.activeHoursStart);
@@ -799,7 +810,7 @@ class _EditMemberPageState extends State<EditMemberPage> {
 
     // Initialize custom field controllers
     widget.member.customFields.forEach((key, value) {
-      _customFieldControllers[TextEditingController(text: key)] = 
+      _customFieldControllers[TextEditingController(text: key)] =
           TextEditingController(text: value);
     });
   }
@@ -851,7 +862,7 @@ class _EditMemberPageState extends State<EditMemberPage> {
     final absSeconds = offsetInSeconds.abs();
     final hours = absSeconds ~/ 3600;
     final minutes = (absSeconds % 3600) ~/ 60;
-    
+
     final sign = offsetInSeconds >= 0 ? '+' : '-';
     return 'GMT$sign${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
@@ -967,7 +978,7 @@ class _EditMemberPageState extends State<EditMemberPage> {
                   });
                 }
               },
-              child: Text(_selectedTimezone != null 
+              child: Text(_selectedTimezone != null
                 ? '${_selectedTimezone!} (${_formatTimezoneOffset(_selectedTimezone!)})'
                 : 'Select Timezone'),
             ),
@@ -1072,12 +1083,12 @@ class _EditMemberPageState extends State<EditMemberPage> {
                     name: _nameController.text,
                     email: _isNotReadyYet ? '' : _emailController.text, // Email is optional if not ready
                     role: _isNotReadyYet ? '' : _selectedRole ?? '', // Role is optional if not ready
-                    timezone: _isNotReadyYet ? '' : _selectedTimezone ?? '', // Timezone is optional if not ready
+                    timezone: _isNotReadyYet ? 'UTC' : _selectedTimezone ?? 'UTC', // Use UTC as default
                     activeHoursStart: _formatTimeOfDay(_startTime),
                     activeHoursEnd: _formatTimeOfDay(_endTime),
                     customFields: _getCustomFields(),
                   );
-                  
+
                   await StorageService.instance.updateMember(updatedMember);
                   if (mounted) {
                     Navigator.pop(context);
@@ -1134,7 +1145,7 @@ class _TimezonePickerDialogState extends State<TimezonePickerDialog> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
       if (_searchController.text == _searchQuery) return;
-      
+
       setState(() {
         _searchQuery = _searchController.text;
         if (_searchQuery.isEmpty) {
@@ -1155,7 +1166,7 @@ class _TimezonePickerDialogState extends State<TimezonePickerDialog> {
     final absSeconds = offsetInSeconds.abs();
     final hours = absSeconds ~/ 3600;
     final minutes = (absSeconds % 3600) ~/ 60;
-    
+
     final sign = offsetInSeconds >= 0 ? '+' : '-';
     return 'GMT$sign${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
@@ -1199,7 +1210,7 @@ class _TimezonePickerDialogState extends State<TimezonePickerDialog> {
                   itemBuilder: (context, index) {
                     final timezone = _filteredTimezones[index];
                     final isSelected = timezone == widget.initialValue;
-                    
+
                     return ListTile(
                       title: Text(timezone),
                       subtitle: Text(_formatTimezoneOffset(timezone)),
@@ -1307,7 +1318,7 @@ class MemberDetailPage extends StatelessWidget {
     final absSeconds = offsetInSeconds.abs();
     final hours = absSeconds ~/ 3600;
     final minutes = (absSeconds % 3600) ~/ 60;
-    
+
     final sign = offsetInSeconds >= 0 ? '+' : '-';
     return 'GMT$sign${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }

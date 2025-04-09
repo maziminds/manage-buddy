@@ -29,7 +29,7 @@ class MemberDetailPage extends StatelessWidget {
                     Text('Email: ${member.email}'),
                     const SizedBox(height: 8),
                     Text(
-                      'Timezone: ${member.timezone} (${_formatTimezoneOffset(member.timezone)})',
+                      'Timezone: ${member.timezone ?? 'UTC'} (${_formatTimezoneOffset(member.timezone ?? 'UTC')})',
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -84,7 +84,7 @@ class MemberDetailPage extends StatelessWidget {
                           ],
                         );
                       } else {
-                        
+
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
