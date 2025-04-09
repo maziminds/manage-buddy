@@ -11,7 +11,7 @@ This is a Flutter project for a team management app. almost entirely written by 
 - for some experienced Flutter Dev, this might not be a big deal but for us(who don't know much about Flutter) making this app was a great learning experience.
 
 ## Tech
-- this project was built using [windsurf](https://codeium.com/windsurf) and [cursor](https://www.cursor.com/).
+- this project was built using [windsurf](https://codeium.com/windsurf), [cursor](https://www.cursor.com/) and [augmentcode](https://www.augmentcode.com/).
 
 ## Features
 - it includes simple CRUD functionality for teams members with Time zone Management and Filters. it stores all data locally.

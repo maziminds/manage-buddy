@@ -468,7 +468,8 @@ class _AddMemberPageState extends State<AddMemberPage> {
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 17, minute: 0);
   final Map<TextEditingController, TextEditingController> _customFieldControllers = {};
-  bool _isNotReadyYet = false;
+  // Always set to true to make fields optional by default
+  bool _isNotReadyYet = true;
 
   final List<String> _roles = roleInfos.keys.toList();
 
@@ -721,17 +722,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            CheckboxListTile(
-              title: const Text('Not Ready Yet (Skip Validation)'),
-              subtitle: const Text('Data will still be saved, but validation will be skipped'),
-              value: _isNotReadyYet,
-              onChanged: (bool? value) {
-                setState(() {
-                  _isNotReadyYet = value ?? false;
-                });
-              },
-            ),
+            // Not Ready Yet checkbox removed - all fields are optional by default
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
@@ -781,7 +772,8 @@ class _EditMemberPageState extends State<EditMemberPage> {
   late TimeOfDay _startTime;
   late TimeOfDay _endTime;
   final Map<TextEditingController, TextEditingController> _customFieldControllers = {};
-  bool _isNotReadyYet = false;
+  // Always set to true to make fields optional by default
+  bool _isNotReadyYet = true;
 
   final List<String> _roles = roleInfos.keys.toList();
 
@@ -1065,18 +1057,7 @@ class _EditMemberPageState extends State<EditMemberPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            CheckboxListTile(
-              title: const Text('Not Ready Yet (Skip Validation)'),
-              subtitle: const Text('Data will still be saved, but validation will be skipped'),
-              value: _isNotReadyYet,
-              onChanged: (bool? value) {
-                print('Not Ready Yet changed to: $value');
-                setState(() {
-                  _isNotReadyYet = value ?? false;
-                });
-              },
-            ),
+            // Not Ready Yet checkbox removed - all fields are optional by default
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () async {
